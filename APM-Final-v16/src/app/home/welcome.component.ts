@@ -22,9 +22,9 @@ export class WelcomeComponent {
   angularVersion = '16';
   
   stats = {
-    products: 10,
-    categories: 5,
-    rating: 4.2
+    products: 12,
+    categories: 6,
+    rating: 4.5
   };
   
   features: Feature[] = [

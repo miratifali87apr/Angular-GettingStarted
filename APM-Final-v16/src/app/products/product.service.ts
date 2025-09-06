@@ -8,10 +8,9 @@ import { IProduct } from "./product";
   providedIn: 'root'
 })
 export class ProductService {
-  // If using Stackblitz, replace the url with this line
-  // because Stackblitz can't find the api folder.
-  // private productUrl = 'assets/products/products.json';
-  private productUrl = 'api/products/products.json';
+  // Backend API URL - running on port 3001
+  private baseUrl = 'http://localhost:3001/api';
+  private productUrl = `${this.baseUrl}/products`;
   private products$: Observable<IProduct[]> | undefined;
 
   constructor(private http: HttpClient) { }
@@ -32,13 +31,17 @@ export class ProductService {
     return this.products$;
   }
 
-  // Get one product
-  // Since we are working with a json file, we can only retrieve all products
-  // So retrieve all products and then find the one we want using 'map'
+  // Get one product directly from API
   getProduct(id: number): Observable<IProduct | undefined> {
-    return this.getProducts()
+    const url = `${this.productUrl}/${id}`;
+    return this.http.get<IProduct>(url)
       .pipe(
-        map((products: IProduct[]) => products.find(p => p.productId === id))
+        tap(product => {
+          if (isDevMode()) {
+            console.log('Product loaded:', product?.productName);
+          }
+        }),
+        catchError(this.handleError)
       );
   }
 
