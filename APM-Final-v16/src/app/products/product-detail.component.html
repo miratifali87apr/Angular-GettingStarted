@@ -3,8 +3,15 @@
     {{pageTitle + ': ' + product?.productName}}
   </div>
 
+  <div *ngIf='isLoading' class='text-center p-4'>
+    <div class='spinner-border' role='status'>
+      <span class='sr-only'>Loading...</span>
+    </div>
+    <p>Loading product details...</p>
+  </div>
+
   <div class='card-body'
-       *ngIf='product'>
+       *ngIf='product && !isLoading'>
     <div class='row'>
       <div class='col-md-8'>
         <div class='row'>
@@ -53,4 +60,9 @@
       <i class='fa fa-chevron-left'></i> Back
     </button>
   </div>
+</div>
+
+<div *ngIf='errorMessage && !isLoading'
+     class='alert alert-danger'>
+  Error: {{ errorMessage }}
 </div>

@@ -7,7 +7,7 @@
       <div class='col-md-2'>Filter by:</div>
       <div class='col-md-4'>
         <input type='text'
-               (input)='onFilterChange($any($event.target).value)'
+               (input)='onFilterChange($event)'
                [value] = 'listFilter()' />
       </div>
     </div>
@@ -17,7 +17,13 @@
         <h4>Filtered by: {{listFilter()}}</h4>
       </div>
     </div>
-    <div class='table-responsive'>
+    <div *ngIf='isLoading' class='text-center'>
+      <div class='spinner-border' role='status'>
+        <span class='sr-only'>Loading...</span>
+      </div>
+      <p>Loading products...</p>
+    </div>
+    <div class='table-responsive' *ngIf='!isLoading'>
       <table class='table'
              *ngIf='products.length'>
         <thead>
@@ -36,7 +42,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor='let product of filteredProducts()'>
+          <tr *ngFor='let product of filteredProducts(); trackBy: trackByProductId'>
             <td>
               <img *ngIf='showImage'
                    [src]='product.imageUrl'

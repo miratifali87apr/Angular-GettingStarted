@@ -1,5 +1,5 @@
-import { Component, OnDestroy, OnInit, computed, signal } from "@angular/core";
-import { Subscription } from "rxjs";
+import { Component, OnInit, computed, signal, ChangeDetectionStrategy, inject, DestroyRef } from "@angular/core";
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IProduct } from "./product";
 import { ProductService } from "./product.service";
 import { ConvertToSpacesPipe } from "../shared/convert-to-spaces.pipe";
@@ -12,17 +12,19 @@ import { FormsModule } from "@angular/forms";
     templateUrl: './product-list.component.html',
     styleUrls: ['./product-list.component.css'],
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [FormsModule, NgIf, NgFor, 
       RouterLink, StarComponent, LowerCasePipe, 
       CurrencyPipe, ConvertToSpacesPipe]
 })
-export class ProductListComponent implements OnInit, OnDestroy {
+export class ProductListComponent implements OnInit {
   pageTitle = 'Product List';
   imageWidth = 50;
   imageMargin = 2;
   showImage = false;
   errorMessage = '';
-  sub!: Subscription;
+  isLoading = true;
+  private destroyRef = inject(DestroyRef);
 
   // Use the new Angular signals feature to perform the filter
   listFilter = signal('');
@@ -42,20 +44,28 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.sub = this.productService.getProducts().subscribe({
-      next: products => {
-        this.products = products;
-      },
-      error: err => this.errorMessage = err
-    });
+    this.isLoading = true;
+    this.productService.getProducts()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: products => {
+          this.products = products;
+          this.isLoading = false;
+        },
+        error: err => {
+          this.errorMessage = err;
+          this.isLoading = false;
+        }
+      });
   }
 
-  ngOnDestroy(): void {
-    this.sub.unsubscribe();
+  trackByProductId(index: number, product: IProduct): number {
+    return product.productId;
   }
 
-  onFilterChange(value: string) {
-    this.listFilter.set(value);
+  onFilterChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.listFilter.set(target.value);
   }
 
   onRatingClicked(message: string): void {

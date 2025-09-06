@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject, DestroyRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IProduct } from './product';
 import { ProductService } from './product.service';
 import { ConvertToSpacesPipe } from '../shared/convert-to-spaces.pipe';
@@ -10,12 +11,15 @@ import { NgIf, LowerCasePipe, CurrencyPipe } from '@angular/common';
     templateUrl: './product-detail.component.html',
     styleUrls: ['./product-detail.component.css'],
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [NgIf, StarComponent, LowerCasePipe, CurrencyPipe, ConvertToSpacesPipe]
 })
 export class ProductDetailComponent implements OnInit {
   pageTitle = 'Product Detail';
   errorMessage = '';
   product: IProduct | undefined;
+  isLoading = true;
+  private destroyRef = inject(DestroyRef);
 
   constructor(private route: ActivatedRoute,
               private router: Router,
@@ -30,10 +34,19 @@ export class ProductDetailComponent implements OnInit {
   }
 
   getProduct(id: number): void {
-    this.productService.getProduct(id).subscribe({
-      next: product => this.product = product,
-      error: err => this.errorMessage = err
-    });
+    this.isLoading = true;
+    this.productService.getProduct(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: product => {
+          this.product = product;
+          this.isLoading = false;
+        },
+        error: err => {
+          this.errorMessage = err;
+          this.isLoading = false;
+        }
+      });
   }
 
   onBack(): void {

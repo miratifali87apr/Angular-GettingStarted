@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
-import { Injectable } from "@angular/core";
-import { Observable, catchError, tap, throwError, map } from "rxjs";
+import { Injectable, isDevMode } from "@angular/core";
+import { Observable, catchError, tap, throwError, map, shareReplay } from "rxjs";
 
 import { IProduct } from "./product";
 
@@ -12,15 +12,24 @@ export class ProductService {
   // because Stackblitz can't find the api folder.
   // private productUrl = 'assets/products/products.json';
   private productUrl = 'api/products/products.json';
+  private products$: Observable<IProduct[]> | undefined;
 
   constructor(private http: HttpClient) { }
 
   getProducts(): Observable<IProduct[]> {
-    return this.http.get<IProduct[]>(this.productUrl)
-      .pipe(
-        tap(data => console.log('All: ', JSON.stringify(data))),
-        catchError(this.handleError)
-      );
+    if (!this.products$) {
+      this.products$ = this.http.get<IProduct[]>(this.productUrl)
+        .pipe(
+          tap(data => {
+            if (isDevMode()) {
+              console.log('Products loaded:', data.length, 'products');
+            }
+          }),
+          shareReplay({ bufferSize: 1, refCount: true }),
+          catchError(this.handleError)
+        );
+    }
+    return this.products$;
   }
 
   // Get one product
@@ -34,18 +43,22 @@ export class ProductService {
   }
 
   private handleError(err: HttpErrorResponse): Observable<never> {
-    // in a real world app, we may send the server to some remote logging infrastructure
+    // In a real world app, we may send the server to some remote logging infrastructure
     // instead of just logging it to the console
     let errorMessage = '';
     if (err.error instanceof ErrorEvent) {
       // A client-side or network error occurred. Handle it accordingly.
-      errorMessage = `An error occurred: ${err.error.message}`;
+      errorMessage = `Network error: ${err.error.message}`;
     } else {
       // The backend returned an unsuccessful response code.
-      // The response body may contain clues as to what went wrong,
-      errorMessage = `Server returned code: ${err.status}, error message is: ${err.message}`;
+      // The response body may contain clues as to what went wrong
+      errorMessage = `Server error: ${err.status} - ${err.message}`;
     }
-    console.error(errorMessage);
+    
+    if (isDevMode()) {
+      console.error('ProductService Error:', errorMessage, err);
+    }
+    
     return throwError(() => errorMessage);
   }
 
