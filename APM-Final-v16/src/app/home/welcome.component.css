@@ -2,9 +2,11 @@
 .hero-section {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  min-height: 80vh;
+  min-height: 90vh;
   position: relative;
   overflow: hidden;
+  margin-top: -80px; /* Offset for fixed navbar */
+  padding-top: 120px; /* Add padding to push content below navbar */
 }
 
 .hero-section::before {
