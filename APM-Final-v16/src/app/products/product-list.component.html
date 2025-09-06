@@ -56,13 +56,13 @@
             <button 
               *ngFor="let option of sortOptions"
               class="btn btn-sort"
-              [class.active]="sortBy === option.value"
+              [class.active]="sortBy() === option.value"
               (click)="onSortChange(option.value)">
               {{option.label}}
-              <i *ngIf="sortBy === option.value" 
+              <i *ngIf="sortBy() === option.value" 
                  class="fa ms-1"
-                 [class.fa-sort-up]="sortOrder === 'asc'"
-                 [class.fa-sort-down]="sortOrder === 'desc'"></i>
+                 [class.fa-sort-up]="sortOrder() === 'asc'"
+                 [class.fa-sort-down]="sortOrder() === 'desc'"></i>
             </button>
           </div>
         </div>

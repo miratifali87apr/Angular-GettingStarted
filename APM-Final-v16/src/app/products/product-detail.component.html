@@ -1,68 +1,224 @@
-<div class='card'>
-  <div class='card-header'>
-    {{pageTitle + ': ' + product?.productName}}
-  </div>
-
-  <div *ngIf='isLoading' class='text-center p-4'>
-    <div class='spinner-border' role='status'>
-      <span class='sr-only'>Loading...</span>
+<!-- Loading State -->
+<div *ngIf="isLoading" class="loading-container">
+  <div class="loading-content">
+    <div class="spinner-container">
+      <div class="custom-spinner"></div>
     </div>
-    <p>Loading product details...</p>
+    <h3>Loading Product Details...</h3>
+    <p>Fetching the latest product information</p>
   </div>
+</div>
 
-  <div class='card-body'
-       *ngIf='product && !isLoading'>
-    <div class='row'>
-      <div class='col-md-8'>
-        <div class='row'>
-          <div class='col-md-4'>Name:</div>
-          <div class='col-md-8'>{{product.productName}}</div>
-        </div>
-        <div class='row'>
-          <div class='col-md-4'>Code:</div>
-          <div class='col-md-8'>{{product.productCode | lowercase | convertToSpaces: '-'}}</div>
-        </div>
-        <div class='row'>
-          <div class='col-md-4'>Description:</div>
-          <div class='col-md-8'>{{product.description}}</div>
-        </div>
-        <div class='row'>
-          <div class='col-md-4'>Availability:</div>
-          <div class='col-md-8'>{{product.releaseDate}}</div>
-        </div>
-        <div class='row'>
-          <div class='col-md-4'>Price:</div>
-          <div class='col-md-8'>{{product.price|currency:'USD':'symbol'}}</div>
-        </div>
-        <div class='row'>
-          <div class='col-md-4'>5 Star Rating:</div>
-          <div class='col-md-8'>
-            <pm-star [rating]='product.starRating'>
-            </pm-star>
-          </div>
-        </div>
-      </div>
-
-      <div class='col-md-4'>
-        <img class='center-block img-responsive'
-             [style.width.px]='200'
-             [style.margin.px]='2'
-             [src]='product.imageUrl'
-             [title]='product.productName'>
-      </div>
-    </div>
-  </div>
-
-  <div class='card-footer'>
-    <button class='btn btn-outline-secondary'
-            style='width:80px'
-            (click)='onBack()'>
-      <i class='fa fa-chevron-left'></i> Back
+<!-- Error State -->
+<div *ngIf="errorMessage && !isLoading" class="error-container">
+  <div class="error-content">
+    <i class="fa fa-exclamation-triangle error-icon"></i>
+    <h3>Product Not Found</h3>
+    <p>{{errorMessage}}</p>
+    <button class="btn btn-primary" (click)="onBack()">
+      <i class="fa fa-arrow-left me-2"></i>Back to Products
     </button>
   </div>
 </div>
 
-<div *ngIf='errorMessage && !isLoading'
-     class='alert alert-danger'>
-  Error: {{ errorMessage }}
+<!-- Product Detail Content -->
+<div *ngIf="product && !isLoading" class="product-detail-container">
+  
+  <!-- Breadcrumb Navigation -->
+  <div class="breadcrumb-section">
+    <div class="container-fluid">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">
+            <a (click)="onBack()" class="breadcrumb-link">
+              <i class="fa fa-home me-1"></i>Products
+            </a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">{{product.productName}}</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Product Hero Section -->
+  <div class="product-hero">
+    <div class="container-fluid">
+      <div class="row align-items-center">
+        <div class="col-lg-6">
+          <div class="product-image-container">
+            <img 
+              [src]="product.imageUrl" 
+              [alt]="product.productName"
+              class="product-hero-image"
+              (error)="onImageError($event)">
+            <div class="product-badges">
+              <span *ngIf="isNewProduct(product.releaseDate)" class="badge badge-new">New</span>
+              <span *ngIf="product.starRating >= 4.5" class="badge badge-popular">Popular</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="product-info">
+            <div class="product-category">{{product.productCode}}</div>
+            <h1 class="product-title">{{product.productName}}</h1>
+            <div class="product-rating-section">
+              <pm-star [rating]="product.starRating"></pm-star>
+              <span class="rating-text">({{product.starRating}}/5 stars)</span>
+            </div>
+            <p class="product-description">{{product.description}}</p>
+            <div class="product-price-section">
+              <div class="current-price">{{product.price | currency:'USD':'symbol':'1.2-2'}}</div>
+              <div class="price-label">Current Price</div>
+            </div>
+            <div class="product-actions">
+              <button class="btn btn-primary btn-lg">
+                <i class="fa fa-shopping-cart me-2"></i>Add to Cart
+              </button>
+              <button class="btn btn-outline-secondary btn-lg">
+                <i class="fa fa-heart me-2"></i>Add to Wishlist
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Details Section -->
+  <div class="product-details-section">
+    <div class="container-fluid">
+      <div class="row">
+        
+        <!-- Product Specifications -->
+        <div class="col-lg-8">
+          <div class="details-card">
+            <div class="details-header">
+              <h3><i class="fa fa-info-circle me-2"></i>Product Specifications</h3>
+            </div>
+            <div class="details-content">
+              <div class="spec-grid">
+                <div class="spec-item">
+                  <div class="spec-label">Product Name</div>
+                  <div class="spec-value">{{product.productName}}</div>
+                </div>
+                <div class="spec-item">
+                  <div class="spec-label">Product Code</div>
+                  <div class="spec-value">{{product.productCode | lowercase | convertToSpaces: '-'}}</div>
+                </div>
+                <div class="spec-item">
+                  <div class="spec-label">Release Date</div>
+                  <div class="spec-value">{{product.releaseDate | date:'MMMM d, y'}}</div>
+                </div>
+                <div class="spec-item">
+                  <div class="spec-label">Customer Rating</div>
+                  <div class="spec-value">
+                    <pm-star [rating]="product.starRating"></pm-star>
+                    <span class="ms-2">{{product.starRating}}/5</span>
+                  </div>
+                </div>
+                <div class="spec-item">
+                  <div class="spec-label">Price</div>
+                  <div class="spec-value price-highlight">{{product.price | currency:'USD':'symbol':'1.2-2'}}</div>
+                </div>
+                <div class="spec-item">
+                  <div class="spec-label">Availability</div>
+                  <div class="spec-value">
+                    <span class="availability-badge available">
+                      <i class="fa fa-check-circle me-1"></i>In Stock
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Product Description -->
+          <div class="details-card">
+            <div class="details-header">
+              <h3><i class="fa fa-file-text me-2"></i>Product Description</h3>
+            </div>
+            <div class="details-content">
+              <p class="detailed-description">{{product.description}}</p>
+              <div class="feature-highlights">
+                <h4>Key Features:</h4>
+                <ul class="feature-list">
+                  <li><i class="fa fa-check text-success me-2"></i>Premium quality construction</li>
+                  <li><i class="fa fa-check text-success me-2"></i>Advanced technology integration</li>
+                  <li><i class="fa fa-check text-success me-2"></i>User-friendly design</li>
+                  <li><i class="fa fa-check text-success me-2"></i>Reliable performance</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+          <!-- Quick Actions -->
+          <div class="sidebar-card">
+            <div class="sidebar-header">
+              <h4>Quick Actions</h4>
+            </div>
+            <div class="sidebar-content">
+              <button class="btn btn-outline-primary w-100 mb-3">
+                <i class="fa fa-share me-2"></i>Share Product
+              </button>
+              <button class="btn btn-outline-secondary w-100 mb-3">
+                <i class="fa fa-print me-2"></i>Print Details
+              </button>
+              <button class="btn btn-outline-info w-100">
+                <i class="fa fa-question-circle me-2"></i>Contact Support
+              </button>
+            </div>
+          </div>
+
+          <!-- Product Stats -->
+          <div class="sidebar-card">
+            <div class="sidebar-header">
+              <h4>Product Stats</h4>
+            </div>
+            <div class="sidebar-content">
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <i class="fa fa-star text-warning"></i>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{product.starRating}}/5</div>
+                  <div class="stat-label">Customer Rating</div>
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <i class="fa fa-calendar text-info"></i>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{product.releaseDate | date:'MMM yyyy'}}</div>
+                  <div class="stat-label">Release Date</div>
+                </div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <i class="fa fa-tag text-success"></i>
+                </div>
+                <div class="stat-info">
+                  <div class="stat-value">{{product.price | currency:'USD':'symbol-narrow':'1.0-0'}}</div>
+                  <div class="stat-label">Price Range</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Back Navigation -->
+  <div class="back-navigation">
+    <div class="container-fluid">
+      <button class="btn btn-outline-primary btn-lg" (click)="onBack()">
+        <i class="fa fa-arrow-left me-2"></i>Back to Products
+      </button>
+    </div>
+  </div>
+
 </div>

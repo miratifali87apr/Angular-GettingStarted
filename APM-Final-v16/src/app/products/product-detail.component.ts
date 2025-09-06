@@ -5,14 +5,14 @@ import { IProduct } from './product';
 import { ProductService } from './product.service';
 import { ConvertToSpacesPipe } from '../shared/convert-to-spaces.pipe';
 import { StarComponent } from '../shared/star.component';
-import { NgIf, LowerCasePipe, CurrencyPipe } from '@angular/common';
+import { NgIf, LowerCasePipe, CurrencyPipe, DatePipe } from '@angular/common';
 
 @Component({
     templateUrl: './product-detail.component.html',
     styleUrls: ['./product-detail.component.css'],
     standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [NgIf, StarComponent, LowerCasePipe, CurrencyPipe, ConvertToSpacesPipe]
+    imports: [NgIf, StarComponent, LowerCasePipe, CurrencyPipe, DatePipe, ConvertToSpacesPipe]
 })
 export class ProductDetailComponent implements OnInit {
   pageTitle = 'Product Detail';
@@ -54,5 +54,22 @@ export class ProductDetailComponent implements OnInit {
 
   onBack(): void {
     this.router.navigate(['/products']);
+  }
+
+  onImageError(event: Event): void {
+    const target = event.target as HTMLImageElement;
+    if (target) {
+      // Prevent infinite loops by checking if already set to placeholder
+      if (!target.src.includes('placeholder.jpg')) {
+        target.src = 'assets/images/placeholder.jpg';
+      }
+    }
+  }
+
+  isNewProduct(releaseDate: string): boolean {
+    const productDate = new Date(releaseDate);
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    return productDate >= sixMonthsAgo;
   }
 }

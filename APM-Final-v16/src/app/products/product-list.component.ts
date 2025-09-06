@@ -25,8 +25,8 @@ export class ProductListComponent implements OnInit {
   errorMessage = '';
   isLoading = true;
   viewMode: 'grid' | 'list' = 'grid';
-  sortBy: 'name' | 'price' | 'rating' | 'newest' = 'name';
-  sortOrder: 'asc' | 'desc' = 'asc';
+  sortBy = signal<'name' | 'price' | 'rating' | 'newest'>('name');
+  sortOrder = signal<'asc' | 'desc'>('asc');
   private destroyRef = inject(DestroyRef);
 
   // Use the new Angular signals feature to perform the filter
@@ -35,9 +35,9 @@ export class ProductListComponent implements OnInit {
   products: IProduct[] = [];
 
   // View options
-  viewOptions: Array<{value: 'grid' | 'list', label: string, icon: string}> = [
-    { value: 'grid', label: 'Grid View', icon: 'fa-th' },
-    { value: 'list', label: 'List View', icon: 'fa-list' }
+  viewOptions = [
+    { value: 'grid' as const, label: 'Grid View', icon: 'fa-th' },
+    { value: 'list' as const, label: 'List View', icon: 'fa-list' }
   ];
 
   // Sort options
@@ -66,7 +66,7 @@ export class ProductListComponent implements OnInit {
     return filteredProducts.sort((a, b) => {
       let comparison = 0;
       
-      switch (this.sortBy) {
+      switch (this.sortBy()) {
         case 'name':
           comparison = a.productName.localeCompare(b.productName);
           break;
@@ -81,21 +81,23 @@ export class ProductListComponent implements OnInit {
           break;
       }
       
-      return this.sortOrder === 'desc' ? -comparison : comparison;
+      return this.sortOrder() === 'desc' ? -comparison : comparison;
     });
   }
 
   onSortChange(sortBy: string): void {
-    if (this.sortBy === sortBy) {
-      this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+    if (this.sortBy() === sortBy) {
+      this.sortOrder.set(this.sortOrder() === 'asc' ? 'desc' : 'asc');
     } else {
-      this.sortBy = sortBy as 'name' | 'price' | 'rating' | 'newest';
-      this.sortOrder = 'asc';
+      this.sortBy.set(sortBy as 'name' | 'price' | 'rating' | 'newest');
+      this.sortOrder.set('asc');
     }
   }
 
-  onViewModeChange(viewMode: 'grid' | 'list'): void {
-    this.viewMode = viewMode;
+  onViewModeChange(viewMode: string): void {
+    if (viewMode === 'grid' || viewMode === 'list') {
+      this.viewMode = viewMode;
+    }
   }
 
   toggleImage(): void {
@@ -143,7 +145,10 @@ export class ProductListComponent implements OnInit {
   onImageError(event: Event): void {
     const target = event.target as HTMLImageElement;
     if (target) {
-      target.src = 'assets/images/placeholder.jpg';
+      // Prevent infinite loops by checking if already set to placeholder
+      if (!target.src.includes('placeholder.jpg')) {
+        target.src = 'assets/images/placeholder.jpg';
+      }
     }
   }
 }
