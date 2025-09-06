@@ -1,75 +1,266 @@
-<div class='card'>
-  <div class='card-header'>
-    {{pageTitle}}
-  </div>
-  <div class='card-body'>
-    <div class='row'>
-      <div class='col-md-2'>Filter by:</div>
-      <div class='col-md-4'>
-        <input type='text'
-               (input)='onFilterChange($event)'
-               [value] = 'listFilter()' />
+<!-- Products Page Header -->
+<div class="products-header">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <h1 class="page-title">
+          <i class="fa fa-shopping-cart me-3"></i>
+          {{pageTitle}}
+        </h1>
+        <p class="page-subtitle">Discover our latest collection of premium tech products</p>
       </div>
-    </div>
-    <div class='row'
-         *ngIf='listFilter'>
-      <div class='col-md-6'>
-        <h4>Filtered by: {{listFilter()}}</h4>
+      <div class="col-md-6">
+        <div class="header-stats">
+          <div class="stat-item">
+            <div class="stat-number">{{products.length}}</div>
+            <div class="stat-label">Total Products</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">{{filteredProducts().length}}</div>
+            <div class="stat-label">Showing</div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div *ngIf='isLoading' class='text-center'>
-      <div class='spinner-border' role='status'>
-        <span class='sr-only'>Loading...</span>
-      </div>
-      <p>Loading products...</p>
-    </div>
-    <div class='table-responsive' *ngIf='!isLoading'>
-      <table class='table'
-             *ngIf='products.length'>
-        <thead>
-          <tr>
-            <th>
-              <button class='btn btn-primary'
-                      (click)='toggleImage()'>
-                {{showImage ? 'Hide' : 'Show'}} Image
-              </button>
-            </th>
-            <th>Product</th>
-            <th>Code</th>
-            <th>Available</th>
-            <th>Price</th>
-            <th>5 Star Rating</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor='let product of filteredProducts(); trackBy: trackByProductId'>
-            <td>
-              <img *ngIf='showImage'
-                   [src]='product.imageUrl'
-                   [title]='product.productName'
-                   [style.width.px]='imageWidth'
-                   [style.margin.px]='imageMargin'>
-            </td>
-            <td>
-              <a [routerLink]="['/products', product.productId]">
-                {{ product.productName }}
-              </a>
-            </td>
-            <td>{{ product.productCode | lowercase | convertToSpaces:'-' }}</td>
-            <td>{{ product.releaseDate }}</td>
-            <td>{{ product.price | currency:'USD':'symbol':'1.2-2' }}</td>
-            <td>
-              <pm-star [rating]='product.starRating'
-                       (ratingClicked)='onRatingClicked($event)'>
-              </pm-star>
-            </td>
-          </tr>
-        </tbody>
-      </table>
     </div>
   </div>
 </div>
-<div *ngIf='errorMessage'
-     class='alert alert-danger'>
-  Error: {{ errorMessage }}
+
+<!-- Controls Bar -->
+<div class="controls-bar">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      <!-- Search Filter -->
+      <div class="col-lg-4 col-md-6 mb-3 mb-lg-0">
+        <div class="search-container">
+          <i class="fa fa-search search-icon"></i>
+          <input 
+            type="text" 
+            class="form-control search-input"
+            placeholder="Search products, codes, or descriptions..."
+            (input)="onFilterChange($event)"
+            [value]="listFilter()">
+          <button 
+            *ngIf="listFilter()" 
+            class="btn btn-link clear-search"
+            (click)="listFilter.set('')">
+            <i class="fa fa-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Sort Options -->
+      <div class="col-lg-3 col-md-6 mb-3 mb-lg-0">
+        <div class="sort-container">
+          <label class="sort-label">Sort by:</label>
+          <div class="btn-group sort-buttons">
+            <button 
+              *ngFor="let option of sortOptions"
+              class="btn btn-sort"
+              [class.active]="sortBy === option.value"
+              (click)="onSortChange(option.value)">
+              {{option.label}}
+              <i *ngIf="sortBy === option.value" 
+                 class="fa ms-1"
+                 [class.fa-sort-up]="sortOrder === 'asc'"
+                 [class.fa-sort-down]="sortOrder === 'desc'"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- View Mode Toggle -->
+      <div class="col-lg-2 col-md-6 mb-3 mb-lg-0">
+        <div class="view-toggle">
+          <label class="view-label">View:</label>
+          <div class="btn-group view-buttons">
+            <button 
+              *ngFor="let view of viewOptions"
+              class="btn btn-view"
+              [class.active]="viewMode === view.value"
+              (click)="onViewModeChange(view.value)"
+              [title]="view.label">
+              <i class="fa" [class]="view.icon"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Count -->
+      <div class="col-lg-3 col-md-6">
+        <div class="results-info">
+          <span *ngIf="!listFilter()">
+            Showing all {{products.length}} products
+          </span>
+          <span *ngIf="listFilter()">
+            Found {{filteredProducts().length}} of {{products.length}} products
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="isLoading" class="loading-container">
+  <div class="loading-content">
+    <div class="spinner-container">
+      <div class="custom-spinner"></div>
+    </div>
+    <h3>Loading Products...</h3>
+    <p>Fetching the latest product information</p>
+  </div>
+</div>
+
+<!-- Error State -->
+<div *ngIf="errorMessage && !isLoading" class="error-container">
+  <div class="error-content">
+    <i class="fa fa-exclamation-triangle error-icon"></i>
+    <h3>Oops! Something went wrong</h3>
+    <p>{{errorMessage}}</p>
+    <button class="btn btn-primary" (click)="ngOnInit()">
+      <i class="fa fa-refresh me-2"></i>Try Again
+    </button>
+  </div>
+</div>
+
+<!-- Products Grid/List -->
+<div *ngIf="!isLoading && !errorMessage" class="products-container">
+  <div class="container-fluid">
+    
+    <!-- No Products Found -->
+    <div *ngIf="filteredProducts().length === 0" class="no-products">
+      <div class="no-products-content">
+        <i class="fa fa-search no-products-icon"></i>
+        <h3>No products found</h3>
+        <p *ngIf="listFilter()">
+          No products match your search for "{{listFilter()}}". 
+          <button class="btn btn-link p-0" (click)="listFilter.set('')">Clear search</button>
+        </p>
+        <p *ngIf="!listFilter()">
+          It looks like there are no products available right now.
+        </p>
+      </div>
+    </div>
+
+    <!-- Grid View -->
+    <div *ngIf="viewMode === 'grid' && filteredProducts().length > 0" 
+         class="products-grid">
+      <div class="row">
+        <div 
+          *ngFor="let product of filteredProducts(); trackBy: trackByProductId"
+          class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
+          <div class="product-card">
+            <div class="product-image">
+              <img 
+                [src]="product.imageUrl" 
+                [alt]="product.productName"
+                class="card-img-top"
+                (error)="onImageError($event)">
+              <div class="product-badges">
+                <span *ngIf="isNewProduct(product.releaseDate)" 
+                      class="badge badge-new">New</span>
+                <span *ngIf="product.starRating >= 4.5" 
+                      class="badge badge-popular">Popular</span>
+              </div>
+              <div class="product-overlay">
+                <button 
+                  class="btn btn-overlay"
+                  [routerLink]="['/products', product.productId]"
+                  title="View Details">
+                  <i class="fa fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            <div class="product-content">
+              <div class="product-header">
+                <h3 class="product-name">
+                  <a [routerLink]="['/products', product.productId]">
+                    {{product.productName}}
+                  </a>
+                </h3>
+                <div class="product-code">{{product.productCode}}</div>
+              </div>
+              <p class="product-description">{{product.description | slice:0:120}}...</p>
+              <div class="product-rating">
+                <pm-star [rating]="product.starRating"
+                         (ratingClicked)="onRatingClicked($event)">
+                </pm-star>
+                <span class="rating-text">({{product.starRating}}/5)</span>
+              </div>
+              <div class="product-footer">
+                <div class="product-price">
+                  {{product.price | currency:'USD':'symbol':'1.2-2'}}
+                </div>
+                <div class="product-date">
+                  {{product.releaseDate | date:'MMM yyyy'}}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- List View -->
+    <div *ngIf="viewMode === 'list' && filteredProducts().length > 0" 
+         class="products-list">
+      <div class="list-header">
+        <div class="row list-header-row">
+          <div class="col-md-1"></div>
+          <div class="col-md-4">Product</div>
+          <div class="col-md-2">Code</div>
+          <div class="col-md-2">Price</div>
+          <div class="col-md-2">Rating</div>
+          <div class="col-md-1">Released</div>
+        </div>
+      </div>
+      <div class="list-items">
+        <div 
+          *ngFor="let product of filteredProducts(); trackBy: trackByProductId"
+          class="list-item">
+          <div class="row align-items-center">
+            <div class="col-md-1">
+              <img 
+                [src]="product.imageUrl" 
+                [alt]="product.productName"
+                class="list-image"
+                (error)="onImageError($event)">
+            </div>
+            <div class="col-md-4">
+              <div class="list-product-info">
+                <h4 class="list-product-name">
+                  <a [routerLink]="['/products', product.productId]">
+                    {{product.productName}}
+                  </a>
+                </h4>
+                <p class="list-product-description">
+                  {{product.description | slice:0:100}}...
+                </p>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <span class="list-product-code">{{product.productCode}}</span>
+            </div>
+            <div class="col-md-2">
+              <span class="list-product-price">
+                {{product.price | currency:'USD':'symbol':'1.2-2'}}
+              </span>
+            </div>
+            <div class="col-md-2">
+              <div class="list-rating">
+                <pm-star [rating]="product.starRating"
+                         (ratingClicked)="onRatingClicked($event)">
+                </pm-star>
+              </div>
+            </div>
+            <div class="col-md-1">
+              <span class="list-product-date">
+                {{product.releaseDate | date:'MMM yy'}}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

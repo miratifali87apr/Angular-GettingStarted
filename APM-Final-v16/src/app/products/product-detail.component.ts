@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy, inject, DestroyRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, inject, DestroyRef, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IProduct } from './product';
@@ -23,7 +23,8 @@ export class ProductDetailComponent implements OnInit {
 
   constructor(private route: ActivatedRoute,
               private router: Router,
-              private productService: ProductService) {
+              private productService: ProductService,
+              private cdr: ChangeDetectorRef) {
   }
 
   ngOnInit(): void {
@@ -41,10 +42,12 @@ export class ProductDetailComponent implements OnInit {
         next: product => {
           this.product = product;
           this.isLoading = false;
+          this.cdr.markForCheck(); // Trigger change detection
         },
         error: err => {
           this.errorMessage = err;
           this.isLoading = false;
+          this.cdr.markForCheck(); // Trigger change detection
         }
       });
   }
